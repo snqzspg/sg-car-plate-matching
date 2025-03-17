@@ -30,7 +30,8 @@
 
 import Data.Attoparsec.ByteString.Char8 (isAlpha_ascii, isDigit)
 import System.Environment (getArgs)
-import Data.Char (toUpper)
+import Data.Bits ((.&.))
+import Data.Char (toUpper, ord)
 import Data.Array (Array)
 import Data.Array.IArray (array, (!))
 import Data.Generics (everything)
@@ -47,10 +48,14 @@ checksumLetters :: Array Int Char
 checksumLetters =
     array (0, checksumLettersLen - 1)
         $ zip [0 .. (checksumLettersLen - 1)] [
-            'A', 'Y', 'U', 'S', 'P', 'L',
-            'J', 'G', 'D', 'B', 'Z', 'X',
-            'T', 'R', 'M', 'K', 'H', 'E',
-            'C'
+            'A', 'Z', 'Y', 'X', 'U', 'T',
+            'S', 'R', 'P', 'M', 'L', 'K',
+            'J', 'H', 'G', 'E', 'D', 'C',
+            'B'
+            -- 'A', 'Y', 'U', 'S', 'P', 'L',
+            -- 'J', 'G', 'D', 'B', 'Z', 'X',
+            -- 'T', 'R', 'M', 'K', 'H', 'E',
+            -- 'C'
         ]
 
 possibleOneLetterPrefixes :: [String]
@@ -69,10 +74,21 @@ possibleThreeLetterPrefixes =
 possiblePrefixes = possibleOneLetterPrefixes ++ possibleTwoLetterPrefixes ++ possibleThreeLetterPrefixes
 
 getChecksumLetterFromSum :: Int -> Char
-getChecksumLetterFromSum n = (!) checksumLetters $ mod n (checksumLettersLen - 1)
+getChecksumLetterFromSum n = (!) checksumLetters $ mod n checksumLettersLen
 
--- getChecksumLetter :: [Char] -> Char
--- getChecksumLetter plateNoCS = 
+getSumFromPlateNoCS :: [Char] -> Int
+getSumFromPlateNoCS plateNoCS = do
+    let prefix = extractLetters plateNoCS
+    let nums   = map (\x -> 15 .&. ord x) $ extractDigits plateNoCS
+    let factors = [5, 4, 3, 2]
+
+    let prefixNums = map (\x -> 31 .&. ord x) $ drop (max (length prefix - 2) 0) prefix
+    let prefixFactors = [9, 4]
+
+    foldl1 (+) $ map (\x -> (fst x) * (snd x)) (zip prefixNums $ drop (max (length prefixFactors - length prefixNums) 0) prefixFactors) ++ (map (\x -> (fst x) * (snd x)) $ zip nums $ drop (max (length factors - length nums) 0) factors)
+
+getChecksumLetter :: [Char] -> Char
+getChecksumLetter plateNoCS = getChecksumLetterFromSum $ getSumFromPlateNoCS plateNoCS
 
 extractChecksum :: [Char] -> Maybe Char
 extractChecksum plate = do
@@ -85,7 +101,15 @@ extractDigits :: [Char] -> [Char]
 extractDigits = filter isDigit
 
 extractLetters :: [Char] -> [Char]
-extractLetters plate = filter isDigit $ init plate
+extractLetters = filter isAlpha_ascii
+
+possiblePlates :: [String]
+possiblePlates = do
+    -- let plateNoCS = concatMap (\prefix -> map (\numberInt -> prefix ++ show numberInt) [1..9999]) possiblePrefixes
+    -- concatMap (\prefix -> map (\numberInt -> prefix ++ show numberInt) [1..9999]) possiblePrefixes
+    let plates = [i ++ j | i <- possiblePrefixes, j <- map show [1..9999]]
+
+    map (\plateNoCS -> plateNoCS ++ [getChecksumLetter plateNoCS]) plates
 
 possibleCombinations :: [Char] -> Maybe [[Char]]
 possibleCombinations incompleteStr = do
@@ -97,5 +121,8 @@ main = do
     -- getArgs >>= (\pureArgs -> putStrLn $ unlines (map (show . hasChecksum) pureArgs))
     getArgs >>= putStrLn . unlines . map (show . extractChecksum . map toUpper)
 
-    print $ possibleTwoLetterPrefixes ++ possibleThreeLetterPrefixes
+    -- print $ possibleTwoLetterPrefixes ++ possibleThreeLetterPrefixes
+    putStrLn $ unlines possiblePlates
+
+    -- print $ getChecksumLetter "SBA1234"
 
