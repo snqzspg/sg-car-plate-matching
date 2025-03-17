@@ -27,7 +27,6 @@
 -- The combinations should exclude certain letter combinations that can be
 -- associated to meaningful or vulgar words.
 
-
 import Data.Attoparsec.ByteString.Char8 (isAlpha_ascii, isDigit)
 import System.Environment (getArgs)
 import Data.Bits ((.&.))
@@ -62,16 +61,21 @@ possibleOneLetterPrefixes :: [String]
 possibleOneLetterPrefixes = ["S"] -- There are more, this is just tentative
 
 possibleTwoLetterPrefixes :: [String]
-possibleTwoLetterPrefixes = concatMap (\a -> map (\b -> a: [b]) ['A' .. 'Z']) ['S', 'E', 'A', 'R']
+possibleTwoLetterPrefixes =
+    concatMap (\a -> map (\b -> a: [b]) ['A' .. 'Z']) ['S', 'E', 'A', 'R']
 
 possibleThreeLetterPrefixes :: [String]
 possibleThreeLetterPrefixes = 
     (concatMap (\a -> 
-            concatMap (\b -> map (\c -> [a] ++ [b] ++ [c]) ['A' .. 'Z']) (['B' .. 'Z'] \\ ['E', 'I', 'O', 'U'])
-        ) ['S', 'F', 'G', 'P']
+            concatMap (\b -> map 
+                (\c -> [a] ++ [b] ++ [c]) ['A' .. 'Z']
+            ) (['B' .. 'Z'] \\ ['E', 'I', 'O', 'U'])
+        ) ['S', 'F', 'G', 'P', 'T']
     \\ ["SHE", "SHY", "SKY", "SLY", "SPA", "SPY"]) ++ ["TIB"]
 
-possiblePrefixes = possibleOneLetterPrefixes ++ possibleTwoLetterPrefixes ++ possibleThreeLetterPrefixes
+possiblePrefixes =
+    possibleOneLetterPrefixes ++ possibleTwoLetterPrefixes
+        ++ possibleThreeLetterPrefixes
 
 getChecksumLetterFromSum :: Int -> Char
 getChecksumLetterFromSum n = (!) checksumLetters $ mod n checksumLettersLen
@@ -85,7 +89,11 @@ getSumFromPlateNoCS plateNoCS = do
     let prefixNums = map (\x -> 31 .&. ord x) $ drop (max (length prefix - 2) 0) prefix
     let prefixFactors = [9, 4]
 
-    foldl1 (+) $ map (\x -> (fst x) * (snd x)) (zip prefixNums $ drop (max (length prefixFactors - length prefixNums) 0) prefixFactors) ++ (map (\x -> (fst x) * (snd x)) $ zip nums $ drop (max (length factors - length nums) 0) factors)
+    -- foldl1 (+) $ map (\x -> (fst x) * (snd x)) (zip prefixNums $ drop (max (length prefixFactors - length prefixNums) 0) prefixFactors) ++ (map (\x -> (fst x) * (snd x)) $ zip nums $ drop (max (length factors - length nums) 0) factors)
+    foldl1 (+) 
+        $ zipWith (*) prefixNums 
+            (drop (max (length prefixFactors - length prefixNums) 0) prefixFactors)
+            ++ zipWith (*) nums (drop (max (length factors - length nums) 0) factors)
 
 getChecksumLetter :: [Char] -> Char
 getChecksumLetter plateNoCS = getChecksumLetterFromSum $ getSumFromPlateNoCS plateNoCS
@@ -105,15 +113,26 @@ extractLetters = filter isAlpha_ascii
 
 possiblePlates :: [String]
 possiblePlates = do
-    -- let plateNoCS = concatMap (\prefix -> map (\numberInt -> prefix ++ show numberInt) [1..9999]) possiblePrefixes
-    -- concatMap (\prefix -> map (\numberInt -> prefix ++ show numberInt) [1..9999]) possiblePrefixes
     let plates = [i ++ j | i <- possiblePrefixes, j <- map show [1..9999]]
-
     map (\plateNoCS -> plateNoCS ++ [getChecksumLetter plateNoCS]) plates
 
-possibleCombinations :: [Char] -> Maybe [[Char]]
+matchStr :: String -> String -> Bool
+matchStr [] [] = True
+matchStr (c1:s1) (c2:s2)
+    | length s1 /= length s2 = False
+    | c1 == '?' || c2 == '?' = matchStr s1 s2
+    | c1 == c2 = matchStr s1 s2
+    | otherwise = False
+
+possibleCombinations :: [Char] -> [[Char]]
 possibleCombinations incompleteStr = do
-    Just [incompleteStr] -- Tentative
+    filter (matchStr incompleteStr) possiblePlates
+
+wrapLoadingText :: [Char] -> [Char]
+wrapLoadingText line = "\x1b[2K\x1b[G" ++ line ++ "\nThis is gonna take a while..."
+
+wrapLoadingTextLines :: [[Char]] -> [[Char]]
+wrapLoadingTextLines = map wrapLoadingText
 
 main :: IO ()
 main = do
@@ -121,8 +140,5 @@ main = do
     -- getArgs >>= (\pureArgs -> putStrLn $ unlines (map (show . hasChecksum) pureArgs))
     getArgs >>= putStrLn . unlines . map (show . extractChecksum . map toUpper)
 
-    -- print $ possibleTwoLetterPrefixes ++ possibleThreeLetterPrefixes
-    putStrLn $ unlines possiblePlates
-
-    -- print $ getChecksumLetter "SBA1234"
-
+    -- putStrLn $ unlines possiblePlates
+    getArgs >>= putStrLn . unlines . map (unlines . possibleCombinations . map toUpper)
