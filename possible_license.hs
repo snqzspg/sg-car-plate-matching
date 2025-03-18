@@ -1,5 +1,5 @@
 -- IDEA
--- Singapore car licence plates consists of fout main parts:
+-- Singapore car licence plates consists of four main parts:
 --  - Prefix Letter  (S or E)
 --  - Suffix Letters (Example: 'BA'         in SBA1234A)
 --  - Numbers        (Example: '1234'       in SBA1234A)
@@ -80,7 +80,6 @@ possibleTwoLetterPrefixes =
             "CB", "PA", "PC", "PD", "PH", "PZ", -- Private Buses
             "PU"                                -- Pulau Ubin
         ]
-    -- concatMap (\a -> map (\b -> a: [b]) ['A' .. 'Z']) ['S', 'E', 'A', 'R']
 
 possibleThreeLetterPrefixes :: [String]
 possibleThreeLetterPrefixes = 
@@ -109,26 +108,37 @@ possibleThreeLetterPrefixes =
                                                         -- vehicles.
 
 possiblePrefixes =
-    possibleOneLetterPrefixes ++ possibleTwoLetterPrefixes
-        ++ possibleThreeLetterPrefixes
+    concat [
+        possibleOneLetterPrefixes,
+        possibleTwoLetterPrefixes,
+        possibleThreeLetterPrefixes
+    ]
 
 getChecksumLetterFromSum :: Int -> Char
 getChecksumLetterFromSum n = (!) checksumLetters $ mod n checksumLettersLen
+                            -- Who write array accesses like this???
+
+vectorMul :: [Int] -> [Int] -> Int
+vectorMul a b = sum $ zipWith (*) a b
+
+keepLastN :: [a] -> Int -> [a]
+keepLastN xs n = foldl (const . drop 1) xs $ drop n xs
+-- Note: foldl  = Java's Stream.reduce(init, binaryop)
+-- Note: foldl1 = Java's Stream.reduce(binaryop)
+-- Thanks https://stackoverflow.com/questions/17252851/how-do-i-take-the-last-n
+--        -elements-of-a-list
 
 getSumFromPlateNoCS :: [Char] -> Int
 getSumFromPlateNoCS plateNoCS = do
-    let prefix  = extractLetters plateNoCS
-    let nums    = map (\x -> 15 .&. ord x) $ extractDigits plateNoCS
+    let prefix  = extractLetters plateNoCS `keepLastN` 2 >>= (\x -> [31 .&. ord x])
+    let nums    = extractDigits plateNoCS >>= (\x -> [15 .&. ord x])
     let factors = [5, 4, 3, 2]
-
-    let prefixNums =
-            map (\x -> 31 .&. ord x) $ drop (max (length prefix - 2) 0) prefix
     let prefixFactors = [9, 4]
+    
+    let a = vectorMul prefix $ keepLastN prefixFactors $ length prefix
+    let b = vectorMul nums $ keepLastN factors $ length nums
 
-    -- foldl1 (+) $ map (\x -> (fst x) * (snd x)) (zip prefixNums $ drop (max (length prefixFactors - length prefixNums) 0) prefixFactors) ++ (map (\x -> (fst x) * (snd x)) $ zip nums $ drop (max (length factors - length nums) 0) factors)
-    sum  $ zipWith (*) prefixNums 
-            (drop (max (length prefixFactors - length prefixNums) 0) prefixFactors)
-            ++ zipWith (*) nums (drop (max (length factors - length nums) 0) factors)
+    a + b
 
 getChecksumLetter :: [Char] -> Char
 getChecksumLetter plateNoCS = getChecksumLetterFromSum $ getSumFromPlateNoCS plateNoCS
@@ -167,14 +177,6 @@ fmtStrMatches (p:pattern) (r:result)
                     ++ "\x1b[0m" ++ fmtStrMatches pattern result
     | otherwise = r : fmtStrMatches pattern result
 
--- extractPossibleLettersAfterTrim :: String -> Int -> [String]
--- extractPossibleLettersAfterTrim trimmed trimmedLen
---     | trimmedLen == 1 = [take 1 trimmed]
---     | isDigit(trimmed !! 1) = [take 1 trimmed]
---     | trimmedLen == 2 = [take 1 trimmed, trimmed]
---     | isDigit(trimmed !! 2) = [take n trimmed | n <- [1..2]]
---     | otherwise = [take n trimmed | n <- [1..3]]
-
 extractPossibleLetters :: String -> [String]
 extractPossibleLetters incompleteStr = do
     let possibleTrim = init incompleteStr
@@ -194,7 +196,8 @@ possibleCombinationsThatMatches pattern = do
     let prefixPattern   =
             filter (\x -> any (`matchStr` x) possibleLetters) possiblePrefixes
 
-    filter (matchStr pattern) $ possiblePlates prefixPattern
+    possiblePlates prefixPattern >>= (\x -> [x | matchStr pattern x])
+    -- filter (matchStr pattern) $ possiblePlates prefixPattern
 
 -- wrapLoadingText :: [Char] -> [Char]
 -- wrapLoadingText line =
@@ -203,59 +206,66 @@ possibleCombinationsThatMatches pattern = do
 -- wrapLoadingTextLines :: [[Char]] -> [[Char]]
 -- wrapLoadingTextLines = map wrapLoadingText
 
-insertHeaderAndIndent :: [Char] -> [[Char]] -> [[Char]]
-insertHeaderAndIndent pattern lines =
-    ["Possible matches for \"\x1b[1;32m" ++ pattern ++ "\x1b[0m\":"]
-        ++ map ("    " ++) lines
-        ++ [""]
+highlightQMs :: String -> String
+highlightQMs s =
+    s >>= (\x -> if x == '?' then "\x1b[1;34m" ++ [x] ++ "\x1b[0m" else [x])
+
+insertHeaderAndIndent :: Bool -> [Char] -> [[Char]] -> [[Char]]
+insertHeaderAndIndent isTTY pattern lines = do
+    let fmtPattern = if isTTY then highlightQMs pattern else pattern
+    concat [
+            ["Possible matches for \"" ++ fmtPattern ++ "\":"],
+            lines >>= (\x -> ["    " ++ x]),
+            [""]
+        ]
 
 printUsage :: IO ()
 printUsage = do
     arg0 <- getProgName
-    hPutStrLn stderr $ "usage: " ++ arg0 ++ " sg_plate_patterns ..."
-    hPutStrLn stderr $ "       sg_plate_patterns  A car plate number with "
-                    ++ "missing alphabets or numbers you want to search."
-    hPutStrLn stderr $ "                          To denote missing characters,"
-                    ++ " use \"?\"."
-    hPutStrLn stderr   "                          For example, \"SBA1234?\"."
-    hPutStrLn stderr $ "                          NOTE: Only accurate for "
-                    ++ "licence plates with checksums,"
-    hPutStrLn stderr $ "                                (Example: S1 - S10 does"
-                    ++ " not have checksums.)"
-    hPutStrLn stderr   ""
-    hPutStrLn stderr $ "This command will list out all possible matches for "
-                    ++ "each pattern specified."
-    hPutStrLn stderr   ""
-    hPutStrLn stderr  "DISCLAIMER: Not all valid license plates are added here."
-    hPutStrLn stderr   ""
-    hPutStrLn stderr $ "NOTE: Currently there's no way to preserve colors when "
-                    ++ "piping to something like 'less'."
-    hPutStrLn stderr   "      You can still do so using"
-    hPutStrLn stderr $ "          sh -c 'script -efq /dev/null -c \"./" ++ arg0 ++ " plate_patterns ...\"' | /usr/bin/less -R"
-    hPutStrLn stderr   "      but it's a bit messy."
+    hPutStrLn stderr $ tail $ concat $ [
+            "usage: " ++ arg0 ++ " sg_plate_patterns ...",
+            "       sg_plate_patterns  A car plate number with missing alphabets or numbers you want to search.",
+            "                          To denote missing characters, use \"?\".",
+            "                          For example, \"SBA1234?\".",
+            "                          NOTE: Only accurate for licence plates with checksums,",
+            "                                (Example: S1 - S10 does not have checksums.)",
+            "",
+            "This command will list out all possible matches for each pattern specified.",
+            "",
+            "DISCLAIMER: Not all valid license plates are added here.",
+            "",
+            "NOTE: Currently there's no way to preserve colors when piping to something like 'less'.",
+            "      You can still do so using",
+            "",
+            "          sh -c 'script -efq /dev/null -c \"./" ++ arg0 ++ " plate_patterns ...\"' | /usr/bin/less -R",
+            "",
+            "      but it's a bit messy."
+        ] >>= (\x -> ["\n" ++ x])
 
 printUsageFormatted :: IO ()
 printUsageFormatted = do
     arg0 <- getProgName
-    hPutStrLn stderr $ "\x1b[1;32musage\x1b[0m: " ++ arg0 ++ " sg_plate_patterns ..."
-    hPutStrLn stderr   "       sg_plate_patterns  A car plate number with missing alphabets or numbers you want to search."
-    hPutStrLn stderr   "                          To denote missing characters, use \"?\"."
-    hPutStrLn stderr   "                          For example, \"SBA1234?\"."
-    hPutStrLn stderr   "                          \x1b[1;34mNOTE\x1b[0m: Only accurate for licence plates with checksums,"
-    hPutStrLn stderr   "                                (Example: S1 - S10 does not have checksums.)"
-    hPutStrLn stderr   ""
-    hPutStrLn stderr   "This command will list out all possible matches for each pattern specified."
-    hPutStrLn stderr   ""
-    hPutStrLn stderr   "\x1b[1;33mDISCLAIMER\x1b[0m: Not all valid license plates are added here."
-    hPutStrLn stderr   "\x1b[1;34mNOTE\x1b[0m: Currently there's no way to preserve \x1b[1;34mcolors\x1b[0m when piping to something like '\x1b[1;32mless\x1b[0m'."
-    hPutStrLn stderr   "      You can still do so using"
-    hPutStrLn stderr $ "          sh -c 'script -efq /dev/null -c \"./" ++ arg0 ++ " plate_patterns ...\"' | /usr/bin/less -R"
-    hPutStrLn stderr   "      but it's a bit messy. (In less you can scroll to clear up)"
+    hPutStrLn stderr $ tail $ concat $ [
+            "\x1b[1;32musage\x1b[0m: " ++ arg0 ++ " sg_plate_patterns ...",
+            "       sg_plate_patterns  A car plate number with missing alphabets or numbers you want to search.",
+            "                          To denote missing characters, use \"?\".",
+            "                          For example, \"SBA1234?\".",
+            "                          \x1b[1;34mNOTE\x1b[0m: Only accurate for licence plates with checksums,",
+            "                                (Example: S1 - S10 does not have checksums.)",
+            "",
+            "This command will list out all possible matches for each pattern specified.",
+            "",
+            "\x1b[1;33mDISCLAIMER\x1b[0m: Not all valid license plates are added here.",
+            "\x1b[1;34mNOTE\x1b[0m: Currently there's no way to preserve \x1b[1;34mcolors\x1b[0m when piping to something like '\x1b[1;32mless\x1b[0m'.",
+            "      You can still do so using",
+            "",
+            "          \x1b[1msh -c 'script -efq /dev/null -c \"./" ++ arg0 ++ " plate_patterns ...\"' | /usr/bin/less -R\x1b[0m",
+            "",
+            "      but it's a bit messy. (In less you can scroll to clear up)"
+        ] >>= (\x -> ["\n" ++ x])
 
 main :: IO ()
 main = do
-    -- getArgs >>= putStrLn . intercalate "\n"
-    --     . map (intercalate "\n" . possibleCombinationsThatMatches . map toUpper)
     args <- getArgs
     isErrTTY <- hIsTerminalDevice stderr
     isOutTTY <- hIsTerminalDevice stdout
@@ -265,11 +275,13 @@ main = do
     then
         if isErrTTY then printUsageFormatted else printUsage
     else
-        getArgs >>= putStrLn . intercalate "\n"
-            . map (\x -> 
-                intercalate "\n" 
-                    $ insertHeaderAndIndent x 
-                    $ if isOutTTY 
-                        then map (fmtStrMatches x) $ possibleCombinationsThatMatches (map toUpper x)
-                        else possibleCombinationsThatMatches (map toUpper x)
-            )
+        putStrLn $ args >>= intercalate "\n" . combineAndFormatMatches isOutTTY
+    where
+        coloriseMatchIfTTY :: Bool -> String -> String -> [String]
+        coloriseMatchIfTTY isTTY x y = [if isTTY then fmtStrMatches x y else y]
+
+        combineAndFormatMatches :: Bool -> String -> [String]
+        combineAndFormatMatches isTTY x =
+            insertHeaderAndIndent isTTY x $ 
+                possibleCombinationsThatMatches (map toUpper x) 
+                    >>= coloriseMatchIfTTY isTTY x
