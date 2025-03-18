@@ -160,18 +160,33 @@ matchStr (c1:s1) (c2:s2)
     | c1 == c2 = matchStr s1 s2
     | otherwise = False
 
-extractPossibleLettersAfterTrim :: String -> Int -> [String]
-extractPossibleLettersAfterTrim trimmed trimmedLen
-    | trimmedLen == 1 = [take 1 trimmed]
-    | isDigit(trimmed !! 1) = [take 1 trimmed]
-    | trimmedLen == 2 = [take 1 trimmed, trimmed]
-    | isDigit(trimmed !! 2) = [take n trimmed | n <- [1..2]]
-    | otherwise = [take n trimmed | n <- [1..3]]
+fmtStrMatches :: String -> String -> String
+fmtStrMatches [] [] = ""
+fmtStrMatches (p:pattern) (r:result)
+    | p == '?'  = "\x1b[1;34m" ++ [r]
+                    ++ "\x1b[0m" ++ fmtStrMatches pattern result
+    | otherwise = r : fmtStrMatches pattern result
+
+-- extractPossibleLettersAfterTrim :: String -> Int -> [String]
+-- extractPossibleLettersAfterTrim trimmed trimmedLen
+--     | trimmedLen == 1 = [take 1 trimmed]
+--     | isDigit(trimmed !! 1) = [take 1 trimmed]
+--     | trimmedLen == 2 = [take 1 trimmed, trimmed]
+--     | isDigit(trimmed !! 2) = [take n trimmed | n <- [1..2]]
+--     | otherwise = [take n trimmed | n <- [1..3]]
 
 extractPossibleLetters :: String -> [String]
 extractPossibleLetters incompleteStr = do
     let possibleTrim = init incompleteStr
-    extractPossibleLettersAfterTrim possibleTrim $ length possibleTrim
+    extractAfterTrimming possibleTrim $ length possibleTrim
+    where
+        extractAfterTrimming :: String -> Int -> [String]
+        extractAfterTrimming trimmed trimmedLen
+            | trimmedLen == 1 = [take 1 trimmed]
+            | isDigit(trimmed !! 1) = [take 1 trimmed]
+            | trimmedLen == 2 = [take 1 trimmed, trimmed]
+            | isDigit(trimmed !! 2) = [take n trimmed | n <- [1..2]]
+            | otherwise = [take n trimmed | n <- [1..3]]
 
 possibleCombinationsThatMatches :: [Char] -> [[Char]]
 possibleCombinationsThatMatches pattern = do
@@ -210,7 +225,14 @@ printUsage = do
     hPutStrLn stderr   ""
     hPutStrLn stderr $ "This command will list out all possible matches for "
                     ++ "each pattern specified."
+    hPutStrLn stderr   ""
     hPutStrLn stderr  "DISCLAIMER: Not all valid license plates are added here."
+    hPutStrLn stderr   ""
+    hPutStrLn stderr $ "NOTE: Currently there's no way to preserve colors when "
+                    ++ "piping to something like 'less'."
+    hPutStrLn stderr   "      You can still do so using"
+    hPutStrLn stderr $ "          sh -c 'script -efq /dev/null -c \"./" ++ arg0 ++ " plate_patterns ...\"' | /usr/bin/less -R"
+    hPutStrLn stderr   "      but it's a bit messy."
 
 printUsageFormatted :: IO ()
 printUsageFormatted = do
@@ -223,7 +245,12 @@ printUsageFormatted = do
     hPutStrLn stderr   "                                (Example: S1 - S10 does not have checksums.)"
     hPutStrLn stderr   ""
     hPutStrLn stderr   "This command will list out all possible matches for each pattern specified."
+    hPutStrLn stderr   ""
     hPutStrLn stderr   "\x1b[1;33mDISCLAIMER\x1b[0m: Not all valid license plates are added here."
+    hPutStrLn stderr   "\x1b[1;34mNOTE\x1b[0m: Currently there's no way to preserve \x1b[1;34mcolors\x1b[0m when piping to something like '\x1b[1;32mless\x1b[0m'."
+    hPutStrLn stderr   "      You can still do so using"
+    hPutStrLn stderr $ "          sh -c 'script -efq /dev/null -c \"./" ++ arg0 ++ " plate_patterns ...\"' | /usr/bin/less -R"
+    hPutStrLn stderr   "      but it's a bit messy. (In less you can scroll to clear up)"
 
 main :: IO ()
 main = do
@@ -231,6 +258,7 @@ main = do
     --     . map (intercalate "\n" . possibleCombinationsThatMatches . map toUpper)
     args <- getArgs
     isErrTTY <- hIsTerminalDevice stderr
+    isOutTTY <- hIsTerminalDevice stdout
 
     hSetBuffering stdout $ BlockBuffering Nothing
     if null args
@@ -241,6 +269,7 @@ main = do
             . map (\x -> 
                 intercalate "\n" 
                     $ insertHeaderAndIndent x 
-                    $ possibleCombinationsThatMatches 
-                    $ map toUpper x
+                    $ if isOutTTY 
+                        then map (fmtStrMatches x) $ possibleCombinationsThatMatches (map toUpper x)
+                        else possibleCombinationsThatMatches (map toUpper x)
             )
