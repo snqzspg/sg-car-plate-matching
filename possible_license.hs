@@ -66,12 +66,17 @@ possibleTwoLetterPrefixes =
 
 possibleThreeLetterPrefixes :: [String]
 possibleThreeLetterPrefixes = 
-    (concatMap (\a -> 
-            concatMap (\b -> map 
-                (\c -> [a] ++ [b] ++ [c]) ['A' .. 'Z']
-            ) (['B' .. 'Z'] \\ ['E', 'I', 'O', 'U'])
-        ) ['S', 'F', 'G', 'P', 'T']
-    \\ ["SHE", "SHY", "SKY", "SLY", "SPA", "SPY"]) ++ ["TIB"]
+    [[a] ++ [b] ++ [c] |
+        a <- ['S', 'F', 'G', 'P', 'T'],
+        b <- ['B' .. 'Z'] \\ ['E', 'I', 'O', 'U'],
+        c <- ['A' .. 'Z']
+    ]
+    -- (concatMap (\a -> 
+    --         concatMap (\b -> map 
+    --             (\c -> [a] ++ [b] ++ [c]) ['A' .. 'Z']
+    --         ) (['B' .. 'Z'] \\ ['E', 'I', 'O', 'U'])
+    --     ) ['S', 'F', 'G', 'P', 'T']
+    -- \\ ["SHE", "SHY", "SKY", "SLY", "SPA", "SPY"]) ++ ["TIB"]
 
 possiblePrefixes =
     possibleOneLetterPrefixes ++ possibleTwoLetterPrefixes
@@ -82,11 +87,12 @@ getChecksumLetterFromSum n = (!) checksumLetters $ mod n checksumLettersLen
 
 getSumFromPlateNoCS :: [Char] -> Int
 getSumFromPlateNoCS plateNoCS = do
-    let prefix = extractLetters plateNoCS
-    let nums   = map (\x -> 15 .&. ord x) $ extractDigits plateNoCS
+    let prefix  = extractLetters plateNoCS
+    let nums    = map (\x -> 15 .&. ord x) $ extractDigits plateNoCS
     let factors = [5, 4, 3, 2]
 
-    let prefixNums = map (\x -> 31 .&. ord x) $ drop (max (length prefix - 2) 0) prefix
+    let prefixNums =
+            map (\x -> 31 .&. ord x) $ drop (max (length prefix - 2) 0) prefix
     let prefixFactors = [9, 4]
 
     -- foldl1 (+) $ map (\x -> (fst x) * (snd x)) (zip prefixNums $ drop (max (length prefixFactors - length prefixNums) 0) prefixFactors) ++ (map (\x -> (fst x) * (snd x)) $ zip nums $ drop (max (length factors - length nums) 0) factors)
@@ -136,12 +142,13 @@ extractPossibleLetters incompleteStr = do
     let possibleTrim = init $ init incompleteStr
     extractPossibleLettersTrim possibleTrim $ length possibleTrim
 
-possibleCombinations :: [Char] -> [[Char]]
-possibleCombinations incompleteStr = do
-    let possibleLetters = extractPossibleLetters $ init incompleteStr
-    let matchingPrefixes = filter (\x -> any (`matchStr` x) possibleLetters) possiblePrefixes
+possibleCombinationsThatMatches :: [Char] -> [[Char]]
+possibleCombinationsThatMatches pattern = do
+    let possibleLetters = extractPossibleLetters $ init pattern
+    let prefixPattern   =
+            filter (\x -> any (`matchStr` x) possibleLetters) possiblePrefixes
 
-    filter (matchStr incompleteStr) $ possiblePlates matchingPrefixes
+    filter (matchStr pattern) $ possiblePlates prefixPattern
 
 wrapLoadingText :: [Char] -> [Char]
 wrapLoadingText line = "\x1b[2K\x1b[G" ++ line ++ "\nThis is gonna take a while..."
@@ -155,5 +162,4 @@ main = do
     -- getArgs >>= (\pureArgs -> putStrLn $ unlines (map (show . hasChecksum) pureArgs))
     -- getArgs >>= putStrLn . unlines . map (show . extractChecksum . map toUpper)
 
-    -- putStrLn $ unlines possiblePlates
-    getArgs >>= putStrLn . intercalate "\n" . map (intercalate "\n" . possibleCombinations . map toUpper)
+    getArgs >>= putStrLn . intercalate "\n" . map (intercalate "\n" . possibleCombinationsThatMatches . map toUpper)
