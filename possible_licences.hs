@@ -197,14 +197,19 @@ possibleCombinationsThatMatches pattern = do
             filter (\x -> any (`matchStr` x) possibleLetters) possiblePrefixes
 
     possiblePlates prefixPattern >>= (\x -> [x | matchStr pattern x])
-    -- filter (matchStr pattern) $ possiblePlates prefixPattern
 
--- wrapLoadingText :: [Char] -> [Char]
--- wrapLoadingText line =
---     "\x1b[2K\x1b[G" ++ line ++ "\nThis is gonna take a while..."
--- 
--- wrapLoadingTextLines :: [[Char]] -> [[Char]]
--- wrapLoadingTextLines = map wrapLoadingText
+wrapLoadingText :: String -> [String]
+wrapLoadingText line =
+    [concat [
+            "\x1b[2K\x1b[G",
+            line,
+            "\n[\x1b[1;34mINFO\x1b[0m] ",
+            "This is gonna take a while..."
+        ]]
+
+wrapLoadingTextLines :: [String] -> String
+wrapLoadingTextLines lines = 
+    concat $ (init lines >>= wrapLoadingText) ++ ["\x1b[2K\x1b[G"]
 
 highlightQMs :: String -> String
 highlightQMs s =
@@ -276,6 +281,7 @@ main = do
         if isErrTTY then printUsageFormatted else printUsage
     else
         putStrLn $ args >>= intercalate "\n" . combineAndFormatMatches isOutTTY
+        -- putStrLn $ args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY
     where
         coloriseMatchIfTTY :: Bool -> String -> String -> [String]
         coloriseMatchIfTTY isTTY x y = [if isTTY then fmtStrMatches x y else y]
