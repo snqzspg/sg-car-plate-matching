@@ -11,19 +11,19 @@
 -- Numbers are in decimal digits from 1 to 9999, with a maximum of 4 digits.
 -- The final checksum letter is a singular letter related to the rest of the
 -- numbers and letters.
---
+
 -- Prefix and Suffix can be thought of as one part as not all plates begin
 -- with S or E.
---
+
 -- Almost all licence plates should have numbers on them.
---
+
 -- Checksum letters are present on almost all plates, with execptions of
 -- some government owned vehicles.
---
+
 -- In this challenge, a Haskell program is written to take a user specified
 -- license plate with missing letters or numbers, and display every
 -- possible valid combinations that fits the incomplete licence plate given
---
+
 -- The combinations should exclude certain letter combinations that can be
 -- associated to meaningful or vulgar words.
 
@@ -34,7 +34,7 @@ import Data.Char (toUpper, ord)
 import Data.Array (Array)
 import Data.Array.IArray (array, (!))
 import Data.Generics (everything)
-import Data.List ((\\))
+import Data.List (intercalate, (\\))
 
 hasChecksum :: [Char] -> Bool
 hasChecksum plateStr = do
@@ -90,8 +90,7 @@ getSumFromPlateNoCS plateNoCS = do
     let prefixFactors = [9, 4]
 
     -- foldl1 (+) $ map (\x -> (fst x) * (snd x)) (zip prefixNums $ drop (max (length prefixFactors - length prefixNums) 0) prefixFactors) ++ (map (\x -> (fst x) * (snd x)) $ zip nums $ drop (max (length factors - length nums) 0) factors)
-    foldl1 (+) 
-        $ zipWith (*) prefixNums 
+    sum  $ zipWith (*) prefixNums 
             (drop (max (length prefixFactors - length prefixNums) 0) prefixFactors)
             ++ zipWith (*) nums (drop (max (length factors - length nums) 0) factors)
 
@@ -111,9 +110,9 @@ extractDigits = filter isDigit
 extractLetters :: [Char] -> [Char]
 extractLetters = filter isAlpha_ascii
 
-possiblePlates :: [String]
-possiblePlates = do
-    let plates = [i ++ j | i <- possiblePrefixes, j <- map show [1..9999]]
+possiblePlates :: [String] -> [String]
+possiblePlates matchPrefixes = do
+    let plates = [i ++ j | i <- matchPrefixes, j <- map show [1..9999]]
     map (\plateNoCS -> plateNoCS ++ [getChecksumLetter plateNoCS]) plates
 
 matchStr :: String -> String -> Bool
@@ -124,9 +123,25 @@ matchStr (c1:s1) (c2:s2)
     | c1 == c2 = matchStr s1 s2
     | otherwise = False
 
+extractPossibleLettersTrim :: String -> Int -> [String]
+extractPossibleLettersTrim trimmed trimmedLen
+    | trimmedLen == 1 = [take 1 trimmed]
+    | isDigit(trimmed !! 1) = [take 1 trimmed]
+    | trimmedLen == 2 = [take 1 trimmed, trimmed]
+    | isDigit(trimmed !! 2) = [take n trimmed | n <- [1..2]]
+    | otherwise = [take n trimmed | n <- [1..3]]
+
+extractPossibleLetters :: String -> [String]
+extractPossibleLetters incompleteStr = do
+    let possibleTrim = init $ init incompleteStr
+    extractPossibleLettersTrim possibleTrim $ length possibleTrim
+
 possibleCombinations :: [Char] -> [[Char]]
 possibleCombinations incompleteStr = do
-    filter (matchStr incompleteStr) possiblePlates
+    let possibleLetters = extractPossibleLetters $ init incompleteStr
+    let matchingPrefixes = filter (\x -> any (`matchStr` x) possibleLetters) possiblePrefixes
+
+    filter (matchStr incompleteStr) $ possiblePlates matchingPrefixes
 
 wrapLoadingText :: [Char] -> [Char]
 wrapLoadingText line = "\x1b[2K\x1b[G" ++ line ++ "\nThis is gonna take a while..."
@@ -138,7 +153,7 @@ main :: IO ()
 main = do
     -- getArgs >>= print . map hasChecksum
     -- getArgs >>= (\pureArgs -> putStrLn $ unlines (map (show . hasChecksum) pureArgs))
-    getArgs >>= putStrLn . unlines . map (show . extractChecksum . map toUpper)
+    -- getArgs >>= putStrLn . unlines . map (show . extractChecksum . map toUpper)
 
     -- putStrLn $ unlines possiblePlates
-    getArgs >>= putStrLn . unlines . map (unlines . possibleCombinations . map toUpper)
+    getArgs >>= putStrLn . intercalate "\n" . map (intercalate "\n" . possibleCombinations . map toUpper)
