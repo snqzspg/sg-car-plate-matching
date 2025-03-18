@@ -58,26 +58,55 @@ checksumLetters =
             -- 'C'
         ]
 
+allAlphabetsExceptIO :: [Char]
+allAlphabetsExceptIO = alphNoIO where
+    alphNoIO = ['A' .. 'Z'] \\ ['I', 'O']
+
+allAlphabetsExceptVowels :: [Char]
+allAlphabetsExceptVowels = alphNoVowels where
+    alphNoVowels = ['B' .. 'Z'] \\ ['E', 'I', 'O', 'U']
+
 possibleOneLetterPrefixes :: [String]
 possibleOneLetterPrefixes = ["S"] -- There are more, this is just tentative
 
 possibleTwoLetterPrefixes :: [String]
 possibleTwoLetterPrefixes =
-    concatMap (\a -> map (\b -> a: [b]) ['A' .. 'Z']) ['S', 'E', 'A', 'R']
+    ([a : [b] | a <- ['S', 'F', 'E', 'A', 'R', 'Q', 'W', 'X', 'Y'],
+                b <- allAlphabetsExceptIO]
+    \\ [
+        "SJ" -- Supreme Court Judges (Plates have no checksum)
+    ])
+        ++ [
+            "CB", "PA", "PC", "PD", "PH", "PZ", -- Private Buses
+            "PU"                                -- Pulau Ubin
+        ]
+    -- concatMap (\a -> map (\b -> a: [b]) ['A' .. 'Z']) ['S', 'E', 'A', 'R']
 
 possibleThreeLetterPrefixes :: [String]
 possibleThreeLetterPrefixes = 
-    [[a] ++ [b] ++ [c] |
+    ([[a] ++ [b] ++ [c] |
         a <- ['S', 'F', 'G', 'P', 'T'],
-        b <- ['B' .. 'Z'] \\ ['E', 'I', 'O', 'U'],
-        c <- ['A' .. 'Z'] \\ ['I', 'O']
-    ] ++ ["TIB"]
-    -- (concatMap (\a -> 
-    --         concatMap (\b -> map 
-    --             (\c -> [a] ++ [b] ++ [c]) ['A' .. 'Z']
-    --         ) (['B' .. 'Z'] \\ ['E', 'I', 'O', 'U'])
-    --     ) ['S', 'F', 'G', 'P', 'T']
-    -- \\ ["SHE", "SHY", "SKY", "SLY", "SPA", "SPY"]) ++ ["TIB"]
+        b <- allAlphabetsExceptVowels,
+        c <- allAlphabetsExceptIO
+    ] \\ [                                        -- --- Exclusions --- --
+        "SCB",                                    -- I think I know why
+        "SCC", "SCD", "SCS", "SCT", "STE",        -- Dk why they're excluded..
+        "SHE", "SHY", "SKY", "SLY", "SPA", "SPY", -- Excluded because they can
+                                                  -- be words
+        "SEP", -- Singapore Elected President (SEP 1) (Does not have checksum at the back)
+        "SPF", -- Commissioner of Police (SPF 1) (Does not have checksum at the back)
+        "FCK"  -- You know why..
+    ]) ++ [    -- --- Inclusions --- --
+        "TIB", -- Trans-Island Buses (No longer exist)
+        "CSS", -- City Shuttle Service (No longer issued, but still exists)
+        "EVS" -- Special for first 100 locally assembled Electronic Vehicls
+    ]
+    ++ ["TR" ++ [a]  | a <- ['A' .. 'Z'] \\ ['I', 'O']] -- TR_: Trailers
+    ++ ['Q' : [a, b] | a <- ['E', 'B', 'C'],
+                       b <- ['A' .. 'Z'] \\ ['I', 'O']] -- QE_, QB_, QC_:
+                                                        -- Once issued to 
+                                                        -- Company-registered
+                                                        -- vehicles.
 
 possiblePrefixes =
     possibleOneLetterPrefixes ++ possibleTwoLetterPrefixes
