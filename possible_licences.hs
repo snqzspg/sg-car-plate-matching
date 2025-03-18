@@ -194,7 +194,7 @@ possibleCombinationsThatMatches :: [Char] -> [[Char]]
 possibleCombinationsThatMatches pattern = do
     let possibleLetters = extractPossibleLetters $ init pattern
     let prefixPattern   =
-            filter (\x -> any (`matchStr` x) possibleLetters) possiblePrefixes
+            possiblePrefixes >>= (\x -> [x | any (`matchStr` x) possibleLetters])
 
     possiblePlates prefixPattern >>= (\x -> [x | matchStr pattern x])
 
