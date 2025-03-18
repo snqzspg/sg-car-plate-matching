@@ -156,9 +156,9 @@ extractDigits = filter isDigit
 extractLetters :: [Char] -> [Char]
 extractLetters = filter isAlpha_ascii
 
-possiblePlates :: [String] -> [String]
-possiblePlates matchPrefixes = do
-    let plates = [i ++ j | i <- matchPrefixes, j <- map show [1..9999]]
+possiblePlates :: [String]
+possiblePlates = do
+    let plates = [i ++ j | i <- possiblePrefixes, j <- map show [1..9999]]
             \\ ["S" ++ show i | i <- [1..10]]
     map (\plateNoCS -> plateNoCS ++ [getChecksumLetter plateNoCS]) plates
 
@@ -191,12 +191,8 @@ extractPossibleLetters incompleteStr = do
             | otherwise = [take n trimmed | n <- [1..3]]
 
 possibleCombinationsThatMatches :: [Char] -> [[Char]]
-possibleCombinationsThatMatches pattern = do
-    let possibleLetters = extractPossibleLetters $ init pattern
-    let prefixPattern   =
-            filter (\x -> any (`matchStr` x) possibleLetters) possiblePrefixes
-
-    possiblePlates prefixPattern >>= (\x -> [x | matchStr pattern x])
+possibleCombinationsThatMatches pattern =
+    possiblePlates >>= (\x -> [x | matchStr pattern x])
 
 wrapLoadingText :: String -> [String]
 wrapLoadingText line =
@@ -275,13 +271,13 @@ main = do
     isErrTTY <- hIsTerminalDevice stderr
     isOutTTY <- hIsTerminalDevice stdout
 
-    hSetBuffering stdout $ BlockBuffering Nothing
+    -- hSetBuffering stdout $ BlockBuffering Nothing
     if null args
     then
         if isErrTTY then printUsageFormatted else printUsage
     else
-        putStrLn $ args >>= intercalate "\n" . combineAndFormatMatches isOutTTY
-        -- putStrLn $ args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY
+        -- putStrLn $ args >>= intercalate "\n" . combineAndFormatMatches isOutTTY
+        putStrLn $ args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY
     where
         coloriseMatchIfTTY :: Bool -> String -> String -> [String]
         coloriseMatchIfTTY isTTY x y = [if isTTY then fmtStrMatches x y else y]
