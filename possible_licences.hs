@@ -306,6 +306,10 @@ main = do
         if isErrTTY then printUsageFormatted else printUsage
     else
         do
+            hPutStrLn stderr $ 
+                (if isErrTTY then "[\x1b[36mNOTE\x1b[0m]" else "[NOTE]")
+                    ++ " You are running a badly optimized version. Unless you "
+                    ++ "like seeing your life ticking away, use the main branch."
             -- putStrLn $ args >>= intercalate "\n" . combineAndFormatMatches isOutTTY
             -- putStrLn $ args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY
             mapM_ putStrNFlush ((args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY) ++ ["\n"])
