@@ -317,7 +317,7 @@ main = do
                     ++ "like seeing your life ticking away, use the main branch."
             -- putStrLn $ args >>= intercalate "\n" . combineAndFormatMatches isOutTTY
             -- putStrLn $ args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY
-            mapM_ putStrNFlush ((args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY) ++ ["\n"])
+            mapM_ putStrNFlush $ (args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY) ++ ["\n"]
     where
         coloriseMatchIfTTY :: Bool -> String -> String -> [String]
         coloriseMatchIfTTY isTTY x y = [if isTTY then fmtStrMatches x y else y]
