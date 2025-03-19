@@ -308,8 +308,7 @@ main = do
         do
             -- putStrLn $ args >>= intercalate "\n" . combineAndFormatMatches isOutTTY
             -- putStrLn $ args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY
-            mapM_ putStrNFlush (args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY)
-            putStr "\x1b[2K\x1b[G"
+            mapM_ putStrNFlush ((args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY) ++ ["\n"])
     where
         coloriseMatchIfTTY :: Bool -> String -> String -> [String]
         coloriseMatchIfTTY isTTY x y = [if isTTY then fmtStrMatches x y else y]
