@@ -232,7 +232,7 @@ wrapLoadingText line =
 
 wrapLoadingTextLines :: [String] -> [String]
 wrapLoadingTextLines lines = 
-    init lines >>= wrapLoadingText -- ++ ["\x1b[2K\x1b[G"]
+    (init lines >>= wrapLoadingText) ++ ["\x1b[2K\x1b[G"]
 
 highlightQMs :: String -> String
 highlightQMs s =
