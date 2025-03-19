@@ -1,3 +1,32 @@
+----------------------------------------------------------------------------------------
+--                                                                                    --
+-- This source file is licensed under a custom Non-Libre Permissive License           --
+--                                                                                    --
+--     Copyright (C) 2025 Snqzs' PG                                                   --
+--                                                                                    --
+-- Redistributions and uses of the source code is permitted provided the following    --
+-- terms are met:                                                                     --
+--                                                                                    --
+--  (1) Redistributions must retain this copyright notice.                            --
+--                                                                                    --
+--  (2) Source code should include the boilerplate below at the top of the source     --
+--      file.                                                                         --
+--                                                                                    --
+--  (3) The names of the copyright holder, collaborators or the Land Transport        --
+--      Authority (LTA) of Singapore may NOT be used to endorse or promote products   --
+--      derived from this software without specific prior written permission from     --
+--      either of the parties.                                                        --
+--                                                                                    --
+--  (4) All modified source files must include a notice, describing all the           --
+--      modifications performed on the files.                                         --
+--                                                                                    --
+--  (5) LTA reserves the right to order the removal of this work. Should this         --
+--      happen, all authors of redistributions of this work are required to remove    --
+--      remove their redistributed works at the earliest opportunity for removal upon --
+--      gaining knowledge of this order.                                              --
+--                                                                                    --
+----------------------------------------------------------------------------------------
+
 -- IDEA
 -- Singapore car licence plates consists of four main parts:
 --  - Prefix Letter  (S or E)

@@ -1,0 +1,96 @@
+Licensed under a custom Non-Libre Permissive License
+Based on the BSD 3-clause License and the Apache 2.0 License
+
+    Copyright (C) 2025 Snqzs' PG
+
+This software involves the use of unaffiliated, reverse-engineered versions of
+proprietary technologies or techniques from
+
+    The Land Transport Authority (LTA) of Singapore
+
+who have not expressed neither approval or objection against third parties from
+reverse-engineering said technologies or techniques.
+
+None of the copyrighted material from LTA are used or involved in the process of
+reverse-engineering, the software only aims to imitate the behaviour.
+
+LTA have also not taken any action against any party for creating unaffiliated
+and reverse-engineered technologies or techniques.
+
+Redistributions and uses of the source code, be it original or derivative works,
+are permitted provided the following terms are met:
+
+ (1) Redistributions, regardless of being in binary or source code form, must
+     retain this copyright notice.
+
+ (2) Source code should include the boilerplate below at the top of the source
+     file (it must be the first thing a person sees when viewing the source
+     code).
+
+ (3) The names of the copyright holder, collaborators or LTA may NOT be used to
+     endorse or promote products derived from this software without specific
+     prior written permission from either of the parties.
+
+ (4) All modified source files must include a notice, describing all the
+     modifications performed on the files. Derivative works does not need to be
+     licensed under the same terms.
+
+ (5) LTA reserves the right to order the removal of this work. Should this
+     happen, all authors of redistributions of this work are required to remove
+     their redistributed works. The redistributors should do so at the earliest
+     opportunity for removal upon gaining knowledge of this removal order.
+     Redistributors do not need to remove their redistributed works if the project
+     removal is initiated by other reasons.
+
+Given the copyright holders and collaborators have followed (5), the copyright
+holders and collaborators are not liable for the lack of willingness of removal
+from the project distributors. 
+
+Unless required by law or agreed to in writing, the software is distributed on
+an "AS IS" BASIS, WITHOUT ANY KIND OF WARRANTY, expressed or implied, including
+but not limited to the WARRANTIES OF MERCHANTABILITY and FITNESS FOR A
+PARTICULAR PURPOSE. In no event shall the copyright holders or collaborators be
+liable for any direct, indirect, incidental, special, exemplary or
+consequential damages (including but not limited to, procurement of substitute
+goods or services; loss of use, data, or profits; or business interruption)
+however caused and on any theory of liability, whether in contract, strict
+liability, or tort (including negligence or otherwise) arising in any way out of
+the use of this software, even if advised of the possibility of such damage.
+
+--  The following text are boilerplates that are required to be included in   --
+--               all source files licensed under these terms.                 --
+--                                                                            --
+--   Any modified files should include a notice right above the boilerplate   --
+-- describing the changes in a point format similar to the terms listed below --
+--                                                                            --
+-- Template:                                                                  --
+-- NOTICE: This is a modified version of SG Car Plate Matching by Snqzs' PG.  --
+--         The following are modifications performed on top of the project:   --
+--                                                                            --
+--  (1) [State your change here]                                              --
+
+This source file is licensed under a custom Non-Libre Permissive License
+
+    Copyright (C) 2025 Snqzs' PG
+
+Redistributions and uses of the source code is permitted provided the following
+terms are met:
+
+ (1) Redistributions must retain this copyright notice.
+
+ (2) Source code should include the boilerplate below at the top of the source
+     file.
+
+ (3) The names of the copyright holder, collaborators or the Land Transport 
+     Authority (LTA) of Singapore may NOT be used to endorse or promote products
+     derived from this software without specific prior written permission from
+     either of the parties.
+
+ (4) All modified source files must include a notice, describing all the
+     modifications performed on the files.
+
+ (5) LTA reserves the right to order the removal of this work. Should this
+     happen, all authors of redistributions of this work are required to remove
+     remove their redistributed works at the earliest opportunity for removal upon
+     gaining knowledge of this order.
+
