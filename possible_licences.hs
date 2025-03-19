@@ -29,7 +29,7 @@
 
 import Data.Attoparsec.ByteString.Char8 (isAlpha_ascii, isDigit)
 import System.Environment (getArgs, getProgName)
-import System.IO (hIsTerminalDevice, hPutStrLn, hSetBuffering, stderr, BufferMode (BlockBuffering), stdout)
+import System.IO (hIsTerminalDevice, hPutStrLn, hSetBuffering, stderr, BufferMode (BlockBuffering, LineBuffering), stdout, hFlush)
 import Data.Bits ((.&.))
 import Data.Char (toUpper, ord)
 import Data.Array (Array)
@@ -196,16 +196,14 @@ possibleCombinationsThatMatches pattern =
 
 wrapLoadingText :: String -> [String]
 wrapLoadingText line =
-    [concat [
-            "\x1b[2K\x1b[G",
-            line,
-            "\n[\x1b[1;34mINFO\x1b[0m] ",
-            "This is gonna take a while..."
-        ]]
+    [
+        "\x1b[2K\x1b[G" ++ line,
+        "\n[\x1b[1;34mINFO\x1b[0m] This is gonna take a while..."
+    ]
 
-wrapLoadingTextLines :: [String] -> String
+wrapLoadingTextLines :: [String] -> [String]
 wrapLoadingTextLines lines = 
-    concat $ (init lines >>= wrapLoadingText) ++ ["\x1b[2K\x1b[G"]
+    init lines >>= wrapLoadingText -- ++ ["\x1b[2K\x1b[G"]
 
 highlightQMs :: String -> String
 highlightQMs s =
@@ -273,13 +271,16 @@ main = do
     isErrTTY <- hIsTerminalDevice stderr
     isOutTTY <- hIsTerminalDevice stdout
 
-    -- hSetBuffering stdout $ BlockBuffering Nothing
+    hSetBuffering stdout LineBuffering
     if null args
     then
         if isErrTTY then printUsageFormatted else printUsage
     else
-        -- putStrLn $ args >>= intercalate "\n" . combineAndFormatMatches isOutTTY
-        putStrLn $ args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY
+        do
+            -- putStrLn $ args >>= intercalate "\n" . combineAndFormatMatches isOutTTY
+            -- putStrLn $ args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY
+            mapM_ putStrNFlush (args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY)
+            putStr "\x1b[2K\x1b[G"
     where
         coloriseMatchIfTTY :: Bool -> String -> String -> [String]
         coloriseMatchIfTTY isTTY x y = [if isTTY then fmtStrMatches x y else y]
@@ -289,3 +290,7 @@ main = do
             insertHeaderAndIndent isTTY x $ 
                 possibleCombinationsThatMatches (map toUpper x) 
                     >>= coloriseMatchIfTTY isTTY x
+
+        putStrNFlush s = do
+            putStr s
+            hFlush stdout
