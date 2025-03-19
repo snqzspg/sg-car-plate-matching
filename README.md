@@ -1,5 +1,7 @@
-# SG Car Plate Checksum
+# SG Car Plate Matches
 This application takes in a Singaporean car plate number with missing letters or numbers and prints out all possible numbers that matches the given pattern.
+## Input
+User will input the car plate number pattern 
 ## Example
 Given a pattern of ```
 ```
@@ -24,6 +26,10 @@ Possible matches for "SBA12??A":
     SBA1262A
     SBA1297A
 ```
+## Accuracy
+Note that not all car plate numbers are considered, especially the more nuanced ones. Any feedback on inaccurate or missing car plate numbers are appreciated, although a pull request is much more greatly appreciated.
+
+If you are using this for investigative purposes, you might want to cross check the results, or take into consideration that the result could be inaccurate.
 ## Building
 ### Prerequisites
 Before you can build the project, you need to have the [Glasgow Haskell Compiler (GHC)](https://www.haskell.org/ghc/).
@@ -57,6 +63,5 @@ The checksum letter is determined by an algorithm which takes in the rest of the
 The algorithm is detailed in the [Wikipedia page](https://en.wikipedia.org/wiki/Vehicle_registration_plates_of_Singapore#Checksum). However, there is not a lot of articles available describing the algorithm and one other article gave a different algorithm.
 
 In this implementation I used the one on Wikipedia, which seems accurate so far.
-
 ## License
 The algorithm behind the checksum may be copyrighted and thus an open-source license is not possible here. 
