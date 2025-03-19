@@ -191,6 +191,8 @@ possiblePlates = do
             \\ ["S" ++ show i | i <- [1..10]]
     map (\plateNoCS -> plateNoCS ++ [getChecksumLetter plateNoCS]) plates
 
+nPossiblePlates = length possiblePlates
+
 matchStr :: String -> String -> Bool
 matchStr [] [] = True
 matchStr (c1:s1) (c2:s2)
@@ -201,6 +203,8 @@ matchStr (c1:s1) (c2:s2)
 
 fmtStrMatches :: String -> String -> String
 fmtStrMatches [] [] = ""
+fmtStrMatches [] _ = ""
+fmtStrMatches _ [] = ""
 fmtStrMatches (p:pattern) (r:result)
     | p == '?'  = "\x1b[1;34m" ++ [r]
                     ++ "\x1b[0m" ++ fmtStrMatches pattern result
@@ -221,18 +225,19 @@ extractPossibleLetters incompleteStr = do
 
 possibleCombinationsThatMatches :: [Char] -> [[Char]]
 possibleCombinationsThatMatches pattern =
-    possiblePlates >>= (\x -> [x | matchStr pattern x])
+    possiblePlates >>= (\x -> [if matchStr pattern x then x else ""])
 
-wrapLoadingText :: String -> [String]
-wrapLoadingText line =
+wrapLoadingText :: (Int, String) -> [String]
+wrapLoadingText (i, line) =
     [
-        "\x1b[2K\x1b[G" ++ line,
-        "\n[\x1b[1;34mINFO\x1b[0m] This is gonna take a while..."
+        if null line then "" else "\x1b[2K\x1b[G" ++ line ++ "\n",
+        "[\x1b[1;34mINFO\x1b[0m] [" ++ show i ++ "/" ++ show nPossiblePlates ++"] This is gonna take a while...\r"
     ]
 
 wrapLoadingTextLines :: [String] -> [String]
 wrapLoadingTextLines lines = 
-    init lines >>= wrapLoadingText -- ++ ["\x1b[2K\x1b[G"]
+    -- init lines >>= wrapLoadingText -- ++ ["\x1b[2K\x1b[G"]
+    zip [0 ..] (init lines) >>= wrapLoadingText
 
 highlightQMs :: String -> String
 highlightQMs s =
@@ -243,7 +248,7 @@ insertHeaderAndIndent isTTY pattern lines = do
     let fmtPattern = if isTTY then highlightQMs pattern else pattern
     concat [
             ["Possible matches for \"" ++ fmtPattern ++ "\":"],
-            lines >>= (\x -> ["    " ++ x]),
+            lines >>= (\x -> [if not $ null x then "    " ++ x else ""]),
             [""]
         ]
 
