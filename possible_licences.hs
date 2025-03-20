@@ -9,13 +9,12 @@
 --                                                                                    --
 --  (1) Redistributions must retain this copyright notice.                            --
 --                                                                                    --
---  (2) Source code should include the boilerplate below at the top of the source     --
---      file.                                                                         --
+--  (2) Source code files should include this boilerplate at the top.                 --
 --                                                                                    --
 --  (3) The names of the copyright holder, collaborators or the Land Transport        --
 --      Authority (LTA) of Singapore may NOT be used to endorse or promote products   --
 --      derived from this software without specific prior written permission from     --
---      either of the parties.                                                        --
+--      any of the aforementioned parties.                                            --
 --                                                                                    --
 --  (4) All modified source files must include a notice, describing all the           --
 --      modifications performed on the files.                                         --
