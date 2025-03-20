@@ -58,7 +58,7 @@
 
 import Data.Attoparsec.ByteString.Char8 (isAlpha_ascii, isDigit)
 import System.Environment (getArgs, getProgName)
-import System.IO (hIsTerminalDevice, hPutStrLn, hSetBuffering, stderr, BufferMode (BlockBuffering, LineBuffering), stdout, hFlush)
+import System.IO (hIsTerminalDevice, hPutStrLn, hSetBuffering, stderr, BufferMode (BlockBuffering, LineBuffering), stdout, hFlush, Handle, hPutStr)
 import Data.Bits ((.&.))
 import Data.Char (toUpper, ord)
 import Data.Array (Array)
@@ -223,34 +223,70 @@ extractPossibleLetters incompleteStr = do
             | isDigit(trimmed !! 2) = [take n trimmed | n <- [1..2]]
             | otherwise = [take n trimmed | n <- [1..3]]
 
-possibleCombinationsThatMatches :: [Char] -> [[Char]]
-possibleCombinationsThatMatches pattern =
-    possiblePlates >>= (\x -> [if matchStr pattern x then x else ""])
+data CarPlate = CarPlate {
+    entryNo    :: Int,
+    plate      :: String,
+    display    :: String,
+    isMatch    :: Bool
+} deriving (Show)
 
-wrapLoadingText :: (Int, String) -> [String]
-wrapLoadingText (i, line) =
-    [
-        if null line then "" else "\x1b[2K\x1b[G" ++ line ++ "\n",
-        "[\x1b[1;34mINFO\x1b[0m] [" ++ show i ++ "/" ++ show nPossiblePlates ++"] This is gonna take a while...\r"
+data CarPlateEntrySet = CarPlateEntrySet {
+    prefix  :: String,
+    entries :: [CarPlate],
+    suffix  :: String
+} deriving (Show)
+
+plateFromStr :: String -> (Int, String) -> [CarPlate]
+plateFromStr pattern (i, s) = [CarPlate {
+    entryNo = i,
+    plate   = s,
+    display = s,
+    isMatch = matchStr pattern s
+}]
+
+possibleCombinationsThatMatches :: [Char] -> [CarPlate]
+possibleCombinationsThatMatches pattern =
+    zip [0..] possiblePlates >>= plateFromStr pattern
+
+initCarPlateEntry :: CarPlateEntrySet -> CarPlateEntrySet
+initCarPlateEntry cpentries = cpentries {entries = init $ entries cpentries}
+
+wrapLoadingText :: CarPlate -> [(String, Handle)]
+wrapLoadingText entry =
+    (if isMatch entry then [
+        ("\x1b[2K\x1b[G", stderr),
+        (display entry ++ "\n", stdout)
+    ] else []) ++ [
+        (printf "[\x1b[1;34mINFO\x1b[0m] Going through plates %s (%d/%d)... \r"
+            (plate entry) (entryNo entry) nPossiblePlates, stderr)
     ]
 
-wrapLoadingTextLines :: [String] -> [String]
-wrapLoadingTextLines lines = 
+wrapLoadingTextLines :: CarPlateEntrySet -> [(String, Handle)]
+wrapLoadingTextLines cpentries = 
     -- init lines >>= wrapLoadingText -- ++ ["\x1b[2K\x1b[G"]
-    (zip [0 ..] (init lines) >>= wrapLoadingText) ++ ["\x1b[2K\x1b[G"]
+    [(prefix cpentries ++ "\n", stdout)]
+        ++ (entries (initCarPlateEntry cpentries) >>= wrapLoadingText)
+        ++ [("\x1b[2K\x1b[G", stderr)]
+        ++ [("", stdout)]
 
 highlightQMs :: String -> String
 highlightQMs s =
     s >>= (\x -> if x == '?' then "\x1b[1;34m" ++ [x] ++ "\x1b[0m" else [x])
 
-insertHeaderAndIndent :: Bool -> [Char] -> [[Char]] -> [[Char]]
-insertHeaderAndIndent isTTY pattern lines = do
+insertHeaderAndIndent :: Bool -> [Char] -> [CarPlate] -> CarPlateEntrySet
+insertHeaderAndIndent isTTY pattern entries = do
     let fmtPattern = if isTTY then highlightQMs pattern else pattern
-    concat [
-            ["Possible matches for \"" ++ fmtPattern ++ "\":"],
-            lines >>= (\x -> [if not $ null x then "    " ++ x else ""]),
-            [""]
-        ]
+    CarPlateEntrySet {
+        prefix  = "Possible matches for \"" ++ fmtPattern ++ "\":",
+        entries = entries
+            >>= (\x -> [if isMatch x then x {display = "    " ++ display x} else x]),
+        suffix  = ""
+    }
+    -- concat [
+    --         ["Possible matches for \"" ++ fmtPattern ++ "\":"],
+    --         lines >>= (\x -> [if not $ null x then "    " ++ x else ""]),
+    --         [""]
+    --     ]
 
 printUsage :: IO ()
 printUsage = do
@@ -306,6 +342,7 @@ main = do
     isOutTTY <- hIsTerminalDevice stdout
 
     hSetBuffering stdout LineBuffering
+    hSetBuffering stderr LineBuffering
     if null args
     then
         if isErrTTY then printUsageFormatted else printUsage
@@ -317,17 +354,21 @@ main = do
                     ++ "like seeing your life ticking away, use the main branch."
             -- putStrLn $ args >>= intercalate "\n" . combineAndFormatMatches isOutTTY
             -- putStrLn $ args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY
-            mapM_ putStrNFlush $ (args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY) ++ ["\n"]
+            mapM_ (uncurry $ flip hPutStrNFlush)
+                $ (
+                    args >>= wrapLoadingTextLines . combineAndFormatMatches isOutTTY
+                ) ++ [("\n", stdout)]
     where
-        coloriseMatchIfTTY :: Bool -> String -> String -> [String]
-        coloriseMatchIfTTY isTTY x y = [if isTTY then fmtStrMatches x y else y]
+        coloriseMatchIfTTY :: Bool -> String -> String -> String
+        coloriseMatchIfTTY isTTY x y = if isTTY then fmtStrMatches x y else y
 
-        combineAndFormatMatches :: Bool -> String -> [String]
+        combineAndFormatMatches :: Bool -> String -> CarPlateEntrySet
         combineAndFormatMatches isTTY x =
             insertHeaderAndIndent isTTY x $ 
                 possibleCombinationsThatMatches (map toUpper x) 
-                    >>= coloriseMatchIfTTY isTTY x
+                    >>= (\y -> [y{display = coloriseMatchIfTTY isTTY x $ display y}])
 
-        putStrNFlush s = do
-            putStr s
-            hFlush stdout
+        hPutStrNFlush :: Handle -> String -> IO ()
+        hPutStrNFlush h s = do
+            hPutStr h s
+            hFlush h
