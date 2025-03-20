@@ -263,7 +263,6 @@ wrapLoadingText entry =
 
 wrapLoadingTextLines :: CarPlateEntrySet -> [(String, Handle)]
 wrapLoadingTextLines cpentries = 
-    -- init lines >>= wrapLoadingText -- ++ ["\x1b[2K\x1b[G"]
     [(prefix cpentries ++ "\n", stdout)]
         ++ (entries (initCarPlateEntry cpentries) >>= wrapLoadingText)
         ++ [("\x1b[2K\x1b[G", stderr)]
@@ -282,11 +281,6 @@ insertHeaderAndIndent isTTY pattern entries = do
             >>= (\x -> [if isMatch x then x {display = "    " ++ display x} else x]),
         suffix  = ""
     }
-    -- concat [
-    --         ["Possible matches for \"" ++ fmtPattern ++ "\":"],
-    --         lines >>= (\x -> [if not $ null x then "    " ++ x else ""]),
-    --         [""]
-    --     ]
 
 printUsage :: IO ()
 printUsage = do
