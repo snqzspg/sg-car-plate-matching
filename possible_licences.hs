@@ -58,13 +58,13 @@
 
 import Data.Attoparsec.ByteString.Char8 (isAlpha_ascii, isDigit)
 import System.Environment (getArgs, getProgName)
-import System.IO (hIsTerminalDevice, hPutStrLn, hSetBuffering, stderr, BufferMode (BlockBuffering, LineBuffering), stdout, hFlush, Handle, hPutStr)
+import System.IO (hIsTerminalDevice, hPutStrLn, hSetBuffering, stderr, BufferMode (LineBuffering), stdout, hFlush, Handle, hPutStr)
 import Data.Bits ((.&.))
 import Data.Char (toUpper, ord)
 import Data.Array (Array)
 import Data.Array.IArray (array, (!))
-import Data.Generics (everything)
-import Data.List (intercalate, (\\), insert)
+import Data.List (intercalate, (\\))
+import Text.Printf (printf)
 
 hasChecksum :: [Char] -> Bool
 hasChecksum plateStr = do
