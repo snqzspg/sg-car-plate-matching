@@ -1,7 +1,7 @@
 # SG Car Plate Checksum
 This application takes in a Singaporean car plate number with missing letters or numbers and prints out all possible numbers that matches the given pattern.
 ## Example
-Given a pattern of ```
+Given a pattern of
 ```
 SBA1234?
 ```
