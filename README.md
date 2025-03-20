@@ -3,7 +3,7 @@ This application takes in a Singaporean car plate number with missing letters or
 ## Input
 User will input the car plate number pattern 
 ## Example
-Given a pattern of ```
+Given a pattern of
 ```
 SBA1234?
 ```
