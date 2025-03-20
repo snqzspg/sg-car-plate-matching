@@ -7,7 +7,8 @@ SBA1234?
 ```
 the application will give
 ```
-Possible matches for "SBA1234?":                                                     SBA1234G
+Possible matches for "SBA1234?":
+    SBA1234G
 ```
 with the missing `G` filled.
 
