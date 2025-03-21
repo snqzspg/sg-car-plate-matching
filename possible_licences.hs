@@ -63,7 +63,7 @@ import Data.Char (toUpper, ord)
 import Data.Array (Array)
 import Data.Array.IArray (array, (!))
 import Data.Generics (everything)
-import Data.List (intercalate, (\\), insert)
+import Data.List (intercalate, (\\), insert, foldl')
 
 hasChecksum :: [Char] -> Bool
 hasChecksum plateStr = do
@@ -150,11 +150,13 @@ vectorMul :: [Int] -> [Int] -> Int
 vectorMul a b = sum $ zipWith (*) a b
 
 keepLastN :: [a] -> Int -> [a]
-keepLastN xs n = foldl (const . drop 1) xs $ drop n xs
+keepLastN xs n = foldl' (const . drop 1) xs $ drop n xs
 -- Note: foldl  = Java's Stream.reduce(init, binaryop)
 -- Note: foldl1 = Java's Stream.reduce(binaryop)
 -- Thanks https://stackoverflow.com/questions/17252851/how-do-i-take-the-last-n
 --        -elements-of-a-list
+-- This site suggest to use foldl' (foldl prime) for better performance?
+-- https://arifordsham.com/is-haskell-fast/
 
 getSumFromPlateNoCS :: [Char] -> Int
 getSumFromPlateNoCS plateNoCS = do
