@@ -184,9 +184,9 @@ extractDigits = filter isDigit
 extractLetters :: [Char] -> [Char]
 extractLetters = filter isAlpha_ascii
 
-possiblePlates :: [String] -> [String]
-possiblePlates matchPrefixes = do
-    let plates = [i ++ j | i <- matchPrefixes, j <- map show [1..9999]]
+possiblePlates :: [String] -> [String] -> [String]
+possiblePlates matchPrefixes matchNumbers = do
+    let plates = [i ++ j | i <- matchPrefixes, j <- matchNumbers]
             \\ ["S" ++ show i | i <- [1..10]]
     map (\plateNoCS -> plateNoCS ++ [getChecksumLetter plateNoCS]) plates
 
@@ -218,13 +218,25 @@ extractPossibleLetters incompleteStr = do
             | isDigit(trimmed !! 2) = [take n trimmed | n <- [1..2]]
             | otherwise = [take n trimmed | n <- [1..3]]
 
+remainingNumbersPattern :: String -> Int -> String
+remainingNumbersPattern pattern prefixLen =
+    drop prefixLen pattern
+
 possibleCombinationsThatMatches :: [Char] -> [[Char]]
 possibleCombinationsThatMatches pattern = do
     let possibleLetters = extractPossibleLetters $ init pattern
     let prefixPattern   =
-            possiblePrefixes >>= (\x -> [x | any (`matchStr` x) possibleLetters])
+            possiblePrefixes >>=
+                (\x -> [x | any (`matchStr` x) possibleLetters])
 
-    possiblePlates prefixPattern >>= (\x -> [x | matchStr pattern x])
+    let possibleNumbers = 
+            possibleLetters >>= 
+                (\x -> [remainingNumbersPattern (init pattern) (length x)])
+    let numberPatterns = 
+            [1 .. 9999] >>=
+                (\x -> [show x | any (`matchStr` show x) possibleNumbers])
+
+    possiblePlates prefixPattern numberPatterns >>= (\x -> [x | matchStr pattern x])
 
 wrapLoadingText :: String -> [String]
 wrapLoadingText line =
