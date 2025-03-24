@@ -279,14 +279,16 @@ printUsage = do
             "",
             "This command will list out all possible matches for each pattern specified.",
             "",
-            "DISCLAIMER: Not all valid license plates are added here.",
+            "DISCLAIMER: This tool may produce inaccurate results and not all valid license plates are added here.",
             "",
             "NOTE: Currently there's no way to preserve colors when piping to something like 'less'.",
             "      You can still do so using",
             "",
             "          sh -c 'script -efq /dev/null -c \"./" ++ arg0 ++ " plate_patterns ...\"' | /usr/bin/less -R",
             "",
-            "      but it's a bit messy."
+            "      but it's a bit messy. (In less you can scroll to the bottom first to clear up)",
+            "",
+            "Version 1.0"
         ] >>= (\x -> ["\n" ++ x])
 
 printUsageFormatted :: IO ()
@@ -302,13 +304,15 @@ printUsageFormatted = do
             "",
             "This command will list out all possible matches for each pattern specified.",
             "",
-            "\x1b[1;33mDISCLAIMER\x1b[0m: Not all valid license plates are added here.",
+            "\x1b[1;33mDISCLAIMER\x1b[0m: This tool may produce inaccurate results and not all valid license plates are added here.",
             "\x1b[1;34mNOTE\x1b[0m: Currently there's no way to preserve \x1b[1;34mcolors\x1b[0m when piping to something like '\x1b[1;32mless\x1b[0m'.",
             "      You can still do so using",
             "",
             "          \x1b[1msh -c 'script -efq /dev/null -c \"./" ++ arg0 ++ " plate_patterns ...\"' | /usr/bin/less -R\x1b[0m",
             "",
-            "      but it's a bit messy. (In less you can scroll to clear up)"
+            "      but it's a bit messy. (In less you can scroll to the bottom first to clear up)",
+            "",
+            "Version 1.0"
         ] >>= (\x -> ["\n" ++ x])
 
 main :: IO ()
@@ -318,6 +322,7 @@ main = do
     isOutTTY <- hIsTerminalDevice stdout
 
     hSetBuffering stdout $ BlockBuffering Nothing
+    hSetBuffering stderr $ BlockBuffering Nothing
     if null args
     then
         if isErrTTY then printUsageFormatted else printUsage
