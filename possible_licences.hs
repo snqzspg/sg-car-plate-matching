@@ -55,19 +55,17 @@
 -- The combinations should exclude certain letter combinations that can be
 -- associated to meaningful or vulgar words.
 
-import Data.Attoparsec.ByteString.Char8 (isAlpha_ascii, isDigit)
 import System.Environment (getArgs, getProgName)
 import System.IO (hIsTerminalDevice, hPutStrLn, hSetBuffering, stderr, BufferMode (BlockBuffering), stdout)
 import Data.Bits ((.&.))
-import Data.Char (toUpper, ord)
+import Data.Char (isAlpha, isDigit, toUpper, ord)
 import Data.Array (Array)
 import Data.Array.IArray (array, (!))
-import Data.Generics (everything)
 import Data.List (intercalate, (\\), insert, foldl')
 
 hasChecksum :: [Char] -> Bool
 hasChecksum plateStr = do
-    isAlpha_ascii $ last plateStr
+    isAlpha $ last plateStr
 
 checksumLettersLen :: Int
 checksumLettersLen = 19
@@ -184,7 +182,7 @@ extractDigits :: [Char] -> [Char]
 extractDigits = filter isDigit
 
 extractLetters :: [Char] -> [Char]
-extractLetters = filter isAlpha_ascii
+extractLetters = filter isAlpha
 
 possiblePlates :: [String] -> [String] -> [String]
 possiblePlates matchPrefixes matchNumbers = do
@@ -269,7 +267,7 @@ insertHeaderAndIndent isTTY pattern lines = do
 printUsage :: IO ()
 printUsage = do
     arg0 <- getProgName
-    hPutStrLn stderr $ tail $ concat $ [
+    hPutStrLn stderr $ drop 1 $ concat $ [
             "usage: " ++ arg0 ++ " sg_plate_patterns ...",
             "       sg_plate_patterns  A car plate number with missing alphabets or numbers you want to search.",
             "                          To denote missing characters, use \"?\".",
@@ -294,7 +292,7 @@ printUsage = do
 printUsageFormatted :: IO ()
 printUsageFormatted = do
     arg0 <- getProgName
-    hPutStrLn stderr $ tail $ concat $ [
+    hPutStrLn stderr $ drop 1 $ concat $ [
             "\x1b[1;32musage\x1b[0m: " ++ arg0 ++ " sg_plate_patterns ...",
             "       sg_plate_patterns  A car plate number with missing alphabets or numbers you want to search.",
             "                          To denote missing characters, use \"?\".",
